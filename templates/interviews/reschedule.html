@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block page_title %}Reschedule Interview Round{% endblock %}
+{% block page_subtitle %}Update appointment date, time, or venue for Round #{{ interview.round_number }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-calendar-days" style="color: var(--primary);"></i>
+      Reschedule Form
+    </div>
+    <a href="{{ url_for('list_interviews') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to Interviews
+    </a>
+  </div>
+
+  <div class="card-body">
+    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 20px; font-size: 0.88rem; line-height: 1.8;">
+      <div><strong>Candidate:</strong> {{ interview.first_name }} {{ interview.last_name }} (<code>{{ interview.candidate_code }}</code>)</div>
+      <div><strong>Role:</strong> {{ interview.job_title }} at {{ interview.company_name }}</div>
+      <div><strong>Current Schedule:</strong> {{ interview.scheduled_date }} at {{ interview.scheduled_time }}</div>
+      <div><strong>Interviewer:</strong> {{ interview.interviewer_name }}</div>
+    </div>
+
+    <form method="POST" action="{{ url_for('reschedule_interview_screen', interview_id=interview.interview_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="scheduled_date">New Interview Date *</label>
+          <input type="date" id="scheduled_date" name="scheduled_date" class="form-control"
+                 value="{{ interview.scheduled_date }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="scheduled_time">New Interview Time *</label>
+          <input type="time" id="scheduled_time" name="scheduled_time" class="form-control"
+                 value="{{ interview.scheduled_time }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="meeting_link_or_venue">Updated Meeting Link / Venue</label>
+        <input type="text" id="meeting_link_or_venue" name="meeting_link_or_venue" class="form-control"
+               value="{{ interview.meeting_link_or_venue }}" required>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-calendar-check"></i> Save Rescheduled Time
+        </button>
+        <a href="{{ url_for('list_interviews') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

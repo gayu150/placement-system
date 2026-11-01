@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block page_title %}Issue Job Offer Letter{% endblock %}
+{% block page_subtitle %}Generate formal job offer for a candidate selected during interviews{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i>
+      Job Offer Creation Form
+    </div>
+    <a href="{{ url_for('list_offers') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to Offers
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('create_offer_action') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="application_id">Select Selected Application *</label>
+        <select id="application_id" name="application_id" class="form-select" required>
+          <option value="">-- Choose Candidate Application --</option>
+          {% for app in selected_applications %}
+            <option value="{{ app.application_id }}"
+              {% if (selected_application_id|string == app.application_id|string) %}selected{% endif %}>
+              {{ app.first_name }} {{ app.last_name }} ({{ app.candidate_code }}) &bull; {{ app.job_title }} at {{ app.company_name }} (App: {{ app.application_code }})
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Only applicants in 'SELECTED' or completed interview stages appear here.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="designation">Offered Designation *</label>
+          <input type="text" id="designation" name="designation" class="form-control"
+                 value="{{ default_designation or '' }}" required placeholder="e.g. Associate Software Engineer">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="package_lpa">Offered Annual CTC (LPA) *</label>
+          <input type="number" step="0.1" id="package_lpa" name="package_lpa" class="form-control" min="0.5"
+                 value="{{ default_package or '8.00' }}" required>
+          <div class="form-text">Total Cost to Company in Lakhs per Annum.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="offer_date">Offer Issue Date *</label>
+          <input type="date" id="offer_date" name="offer_date" class="form-control"
+                 value="{{ default_offer_date }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="expected_joining_date">Expected Joining Date *</label>
+          <input type="date" id="expected_joining_date" name="expected_joining_date" class="form-control"
+                 value="{{ default_joining_date }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="remarks">Offer Terms & Special Conditions</label>
+        <textarea id="remarks" name="remarks" class="form-control" rows="3" placeholder="Joining bonuses, probation periods, location constraints, relocation assistance..."></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-award"></i> Generate & Issue Offer
+        </button>
+        <a href="{{ url_for('list_offers') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

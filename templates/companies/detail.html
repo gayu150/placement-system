@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{ company.company_name }}{% endblock %}
+{% block page_subtitle %}Company Code: {{ company.company_code }} | Partner Profile{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('create_job_screen', company_id=company.company_id) }}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus"></i> Post Job Drive
+  </a>
+  <a href="{{ url_for('edit_company_screen', company_id=company.company_id) }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-pen-to-square"></i> Edit
+  </a>
+  {% if company.status == 'Active' %}
+    <form method="POST" action="{{ url_for('deactivate_company_action', company_id=company.company_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm="Deactivate {{ company.company_name }}?">
+        <i class="fa-solid fa-ban"></i> Deactivate
+      </button>
+    </form>
+  {% else %}
+    <form method="POST" action="{{ url_for('activate_company_action', company_id=company.company_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-success btn-sm">
+        <i class="fa-solid fa-check"></i> Reactivate
+      </button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+  <!-- Left Column: Company Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-building"></i> Company Information</div>
+      <span class="badge badge-{{ 'active' if company.status == 'Active' else 'inactive' }}">{{ company.status }}</span>
+    </div>
+    <div class="card-body">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="width: 72px; height: 72px; border-radius: var(--radius-md); background: #334155; color: #fff; font-size: 1.8rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+          <i class="fa-solid fa-city"></i>
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 700;">{{ company.company_name }}</h2>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">{{ company.company_code }}</div>
+        <div style="margin-top: 8px;">
+          <span class="badge badge-inactive">{{ company.company_type }}</span>
+          <span class="badge badge-inactive">{{ company.industry }}</span>
+        </div>
+      </div>
+
+      <div style="font-size: 0.88rem; line-height: 2;">
+        <div><strong>Location / HQ:</strong> {{ company.location }}</div>
+        {% if company.website %}
+          <div><strong>Website:</strong> <a href="{{ company.website }}" target="_blank" rel="noopener" style="color: var(--primary);">{{ company.website }}</a></div>
+        {% endif %}
+        <div><strong>Registered:</strong> {{ company.created_at }}</div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-color); margin: 16px 0;">
+
+      <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 8px;">HR / Campus Representative</h4>
+      <div style="font-size: 0.85rem; line-height: 1.8;">
+        <div><strong>Contact Person:</strong> {{ company.hr_name }}</div>
+        <div><strong>Email:</strong> {{ company.hr_email }}</div>
+        <div><strong>Phone:</strong> {{ company.hr_phone }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Associated Job Postings -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-briefcase"></i> Job Postings & Drives</div>
+      <a href="{{ url_for('create_job_screen', company_id=company.company_id) }}" class="btn btn-primary btn-sm">Add Job</a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Job Title & Code</th>
+            <th>Openings</th>
+            <th>Package</th>
+            <th>Deadline</th>
+            <th>Status</th>
+            <th>Applicants</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in jobs %}
+            <tr>
+              <td>
+                <a href="{{ url_for('view_job_detail', job_id=job.job_id) }}" style="font-weight: 600; color: var(--primary);">
+                  {{ job.title }}
+                </a>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ job.job_code }} ({{ job.employment_type }})</div>
+              </td>
+              <td><strong>{{ job.openings }}</strong></td>
+              <td>₹{{ job.min_package }} - {{ job.max_package }} LPA</td>
+              <td>{{ job.deadline }}</td>
+              <td>
+                <span class="badge badge-{{ job.status.lower() }}">{{ job.status }}</span>
+              </td>
+              <td>
+                <span class="badge badge-inactive">{{ job.app_count }} Applied</span>
+              </td>
+              <td>
+                <a href="{{ url_for('view_job_detail', job_id=job.job_id) }}" class="btn btn-secondary btn-sm">
+                  View
+                </a>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-briefcase"></i></div>
+                <div>No job postings recorded for this company yet.</div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

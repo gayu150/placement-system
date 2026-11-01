@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block page_title %}System Activity Audit Trail{% endblock %}
+{% block page_subtitle %}Comprehensive immutable log of administrative and recruitment operational actions{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<form method="GET" action="{{ url_for('view_activity_logs') }}" class="filter-bar">
+  <div class="search-input-group">
+    <input type="text" name="search" class="form-control" placeholder="Search by description, action, user, or record ID..." value="{{ filters.search or '' }}">
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="module" class="form-select">
+      <option value="">All Modules</option>
+      {% for m in ['Candidates', 'Companies', 'Jobs', 'Applications', 'Interviews', 'Offers', 'Placements', 'System'] %}
+        <option value="{{ m }}" {% if filters.module == m %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{{ url_for('view_activity_logs') }}" class="btn btn-secondary btn-sm">Reset</a>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Log ID</th>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Module</th>
+          <th>Action</th>
+          <th>Record ID</th>
+          <th>Description</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td><code>#{{ log.log_id }}</code></td>
+            <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">{{ log.created_at }}</td>
+            <td><strong>{{ log.user_name or 'System' }}</strong></td>
+            <td><span class="badge badge-inactive">{{ log.module }}</span></td>
+            <td><span class="badge badge-open">{{ log.action }}</span></td>
+            <td><code>{{ log.record_id or '-' }}</code></td>
+            <td>{{ log.description }}</td>
+            <td><span style="font-size: 0.75rem; color: var(--text-muted);">{{ log.ip_address or '127.0.0.1' }}</span></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+              <div>No activity audit logs found matching your filter criteria.</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

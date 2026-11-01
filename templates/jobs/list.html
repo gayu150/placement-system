@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block page_title %}Job Drives & Openings{% endblock %}
+{% block page_subtitle %}Manage campus recruitment drives, company openings, and eligibility thresholds{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('create_job_screen') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Post New Job Opening
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<form method="GET" action="{{ url_for('list_jobs') }}" class="filter-bar">
+  <div class="search-input-group">
+    <input type="text" name="search" class="form-control" placeholder="Search by job title, code, company, location..." value="{{ filters.search or '' }}">
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="company_id" class="form-select">
+      <option value="">All Companies</option>
+      {% for comp in companies %}
+        <option value="{{ comp.company_id }}" {% if filters.company_id|string == comp.company_id|string %}selected{% endif %}>
+          {{ comp.company_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 140px;">
+    <select name="status" class="form-select">
+      <option value="">All Statuses</option>
+      <option value="Open" {% if filters.status == 'Open' %}selected{% endif %}>Open</option>
+      <option value="Closed" {% if filters.status == 'Closed' %}selected{% endif %}>Closed</option>
+      <option value="Draft" {% if filters.status == 'Draft' %}selected{% endif %}>Draft</option>
+      <option value="Cancelled" {% if filters.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+    </select>
+  </div>
+
+  <div style="min-width: 150px;">
+    <select name="employment_type" class="form-select">
+      <option value="">All Employment Types</option>
+      <option value="Full-time" {% if filters.employment_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+      <option value="Internship" {% if filters.employment_type == 'Internship' %}selected{% endif %}>Internship</option>
+      <option value="Contract" {% if filters.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{{ url_for('list_jobs') }}" class="btn btn-secondary btn-sm">Reset</a>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Job Title & Code</th>
+          <th>Company</th>
+          <th>Vacancies</th>
+          <th>CTC Package</th>
+          <th>Criteria Thresholds</th>
+          <th>Timeline</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+          <tr>
+            <td>
+              <div style="font-weight: 600;">
+                <a href="{{ url_for('view_job_detail', job_id=job.job_id) }}" style="color: var(--primary); text-decoration: none;">
+                  {{ job.title }}
+                </a>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                <code>{{ job.job_code }}</code> &bull; {{ job.employment_type }} &bull; {{ job.location }}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ job.company_name }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ job.company_code }}</div>
+            </td>
+            <td>
+              <span style="font-weight: 700; font-size: 1.05rem;">{{ job.openings }}</span>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ job.total_applications }} applied</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #166534;">₹{{ job.min_package }} - {{ job.max_package }} LPA</div>
+            </td>
+            <td>
+              <div style="font-size: 0.8rem;">
+                <strong>Degree:</strong> {{ job.qualification_req }} | <strong>Min:</strong> {{ job.min_percentage }}%
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                Batch: {{ job.min_passing_year }}-{{ job.max_passing_year }} | Max Backlogs: {{ job.max_backlogs }}
+              </div>
+            </td>
+            <td>
+              <div style="font-size: 0.8rem;"><i class="fa-regular fa-calendar-check"></i> Posted: {{ job.posted_date }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> Deadline: {{ job.deadline }}</div>
+            </td>
+            <td>
+              <span class="badge badge-{{ job.status.lower() }}">
+                {{ job.status }}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('view_job_detail', job_id=job.job_id) }}" class="btn btn-secondary btn-sm" title="View Details">
+                  <i class="fa-regular fa-eye"></i>
+                </a>
+                <a href="{{ url_for('edit_job_screen', job_id=job.job_id) }}" class="btn btn-secondary btn-sm" title="Edit Job">
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </a>
+                <a href="{{ url_for('apply_job_screen', job_id=job.job_id) }}" class="btn btn-primary btn-sm" title="Record Application">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-briefcase"></i></div>
+              <div>No job postings match your criteria.</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

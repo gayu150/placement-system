@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block page_title %}Placement & Recruitment Reports{% endblock %}
+{% block page_subtitle %}Comprehensive database-backed analytics, recruitment funnels, and performance audits{% endblock %}
+
+{% block content %}
+<!-- Quick Metric Summary Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 24px;">
+  <!-- Offer to Joining Conversion -->
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header" style="background: #eff6ff;">
+      <div class="card-title" style="color: var(--primary); font-size: 0.95rem;">
+        <i class="fa-solid fa-chart-line"></i> Offer-to-Joining Conversion
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+        <span style="font-size: 2rem; font-weight: 700; color: #1e293b;">{{ conv.joining_rate }}%</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Conversion Rate</span>
+      </div>
+      <div style="font-size: 0.82rem; line-height: 1.8; color: #475569;">
+        <div>Total Offers Issued: <strong>{{ conv.total_offers }}</strong></div>
+        <div>Accepted by Students: <strong>{{ conv.accepted_offers }}</strong> ({{ conv.acceptance_rate }}%)</div>
+        <div>Confirmed Joined: <strong style="color: var(--success);">{{ conv.confirmed_joined }}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Placed vs Unplaced Ratio -->
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header" style="background: #ecfdf5;">
+      <div class="card-title" style="color: var(--success); font-size: 0.95rem;">
+        <i class="fa-solid fa-users-viewfinder"></i> Candidate Placement Ratio
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="font-size: 0.82rem; margin-bottom: 12px; color: #475569;">
+        Total Active Pool: <strong>{{ placed_ratio.total }} Candidates</strong>
+      </div>
+      {% for brk in placed_ratio.breakdown %}
+        <div style="margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 2px;">
+            <span>{{ brk.placement_status }}</span>
+            <span>{{ brk.count }} ({{ brk.percentage }}%)</span>
+          </div>
+          <div style="height: 8px; background: #f1f5f9; border-radius: var(--radius-pill); overflow: hidden;">
+            <div style="height: 100%; width: {{ brk.percentage }}%; background: {% if brk.placement_status == 'Placed' %}var(--success){% elif brk.placement_status == 'In Process' %}#3b82f6{% else %}#94a3b8{% endif %};"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Recruitment Funnel Visualization -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-filter" style="color: var(--primary);"></i>
+      Recruitment Funnel & Progression Audit
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="funnel-container">
+      {% for step in funnel %}
+        <div class="funnel-step">
+          <div class="funnel-label">{{ step.stage_label }}</div>
+          <div class="funnel-bar-wrapper">
+            <div class="funnel-bar" style="width: {{ step.percentage }}%;"></div>
+          </div>
+          <div class="funnel-stat">{{ step.count }} ({{ step.percentage }}%)</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Two Columns: Candidates by Tech & Placements by Company -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+  <!-- Candidates by Technology -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-laptop-code" style="color: #6366f1;"></i>
+        Candidates by Technology
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Technology</th>
+            <th>Total Pool</th>
+            <th>Share %</th>
+            <th>Placed</th>
+            <th>Avg Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tech_report %}
+            <tr>
+              <td><strong>{{ t.primary_technology }}</strong></td>
+              <td>{{ t.candidate_count }}</td>
+              <td>{{ t.percentage_of_total }}%</td>
+              <td><span class="badge badge-active">{{ t.placed_count }}</span></td>
+              <td>{{ t.avg_percentage }}%</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Company-Wise Placements & CTC Packages -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-building" style="color: #0284c7;"></i>
+        Company-Wise Placement Outcomes
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Placed</th>
+            <th>Avg CTC</th>
+            <th>Highest CTC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in company_placements %}
+            <tr>
+              <td>
+                <strong>{{ c.company_name }}</strong>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ c.location }} &bull; {{ c.industry }}</div>
+              </td>
+              <td><span class="badge badge-active">{{ c.total_placed }}</span></td>
+              <td style="color: #166534; font-weight: 600;">₹{{ c.avg_package }} LPA</td>
+              <td style="color: #166534; font-weight: 700;">₹{{ c.highest_package }} LPA</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="empty-state">No confirmed company placements recorded.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Two Columns: Technology-Wise Placements & Open Job Aging -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-top: 24px;">
+  <!-- Technology-Wise Placements -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-code-branch" style="color: #10b981;"></i>
+        Technology-Wise Placements
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Primary Technology</th>
+            <th>Placed Count</th>
+            <th>Average Package</th>
+            <th>Highest Package</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tp in tech_placements %}
+            <tr>
+              <td><strong>{{ tp.primary_technology }}</strong></td>
+              <td><span class="badge badge-active">{{ tp.placed_count }}</span></td>
+              <td style="color: #166534; font-weight: 600;">₹{{ tp.avg_package }} LPA</td>
+              <td style="color: #166534; font-weight: 700;">₹{{ tp.highest_package }} LPA</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="empty-state">No data recorded.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Open Job Aging Report -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i>
+        Open Job Aging (Days Open)
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Job Drive</th>
+            <th>Company</th>
+            <th>Vacancies</th>
+            <th>Posted</th>
+            <th>Days Open</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for j in job_aging %}
+            <tr>
+              <td>
+                <a href="{{ url_for('view_job_detail', job_id=j.job_id) }}" style="font-weight: 600; color: var(--primary);">
+                  {{ j.title }}
+                </a>
+              </td>
+              <td>{{ j.company_name }}</td>
+              <td>{{ j.openings }}</td>
+              <td>{{ j.posted_date }}</td>
+              <td>
+                <span class="badge {% if j.days_open > 30 %}badge-cancelled{% elif j.days_open > 14 %}badge-draft{% else %}badge-active{% endif %}">
+                  {{ j.days_open }} days
+                </span>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="empty-state">No active open job drives.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Recruiter Performance Auditing -->
+<div class="card" style="margin-top: 24px;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-user-gear" style="color: #64748b;"></i>
+      Staff & Recruiter Activity Audit
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Staff Member</th>
+          <th>Role</th>
+          <th>Jobs Posted</th>
+          <th>Interviews Scheduled</th>
+          <th>Feedback Submitted</th>
+          <th>Offers Issued</th>
+          <th>Placements Recorded</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recruiter_perf %}
+          <tr>
+            <td>
+              <div style="font-weight: 600;">{{ r.full_name }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ r.email }}</div>
+            </td>
+            <td><span class="badge badge-inactive">{{ r.role_name }}</span></td>
+            <td><strong>{{ r.jobs_posted }}</strong></td>
+            <td>{{ r.interviews_scheduled }}</td>
+            <td>{{ r.feedback_submitted }}</td>
+            <td>{{ r.offers_created }}</td>
+            <td><span class="badge badge-active">{{ r.placements_recorded }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

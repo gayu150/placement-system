@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{ job.title }}{% endblock %}
+{% block page_subtitle %}Job Code: {{ job.job_code }} | {{ job.company_name }} | {{ job.location }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('apply_job_screen', job_id=job.job_id) }}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-paper-plane"></i> Record Candidate Application
+  </a>
+  <a href="{{ url_for('edit_job_screen', job_id=job.job_id) }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-pen-to-square"></i> Edit
+  </a>
+
+  <!-- Status change actions (close/cancel instead of hard deletion) -->
+  {% if job.status == 'Open' %}
+    <form method="POST" action="{{ url_for('change_job_status_action', job_id=job.job_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="status" value="Closed">
+      <button type="submit" class="btn btn-warning btn-sm" data-confirm="Close applications for {{ job.title }}?">
+        <i class="fa-solid fa-lock"></i> Close Job
+      </button>
+    </form>
+    <form method="POST" action="{{ url_for('change_job_status_action', job_id=job.job_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="status" value="Cancelled">
+      <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm="Cancel recruitment drive for {{ job.title }}?">
+        <i class="fa-solid fa-ban"></i> Cancel Drive
+      </button>
+    </form>
+  {% elif job.status in ['Closed', 'Draft', 'Cancelled'] %}
+    <form method="POST" action="{{ url_for('change_job_status_action', job_id=job.job_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="status" value="Open">
+      <button type="submit" class="btn btn-success btn-sm">
+        <i class="fa-solid fa-door-open"></i> Re-Open Drive
+      </button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+  <!-- Left Column: Job Drive Details -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-briefcase"></i> Job Overview</div>
+      <span class="badge badge-{{ job.status.lower() }}">{{ job.status }}</span>
+    </div>
+    <div class="card-body">
+      <div style="margin-bottom: 16px;">
+        <h2 style="font-size: 1.25rem; font-weight: 700;">{{ job.title }}</h2>
+        <div style="font-size: 0.9rem; color: var(--primary); font-weight: 600;">
+          <a href="{{ url_for('view_company_detail', company_id=job.company_id) }}" style="color: inherit; text-decoration: none;">
+            {{ job.company_name }}
+          </a>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+          {{ job.employment_type }} &bull; {{ job.location }}
+        </div>
+      </div>
+
+      <div style="font-size: 0.88rem; line-height: 2;">
+        <div><strong>Vacancies / Openings:</strong> <span style="font-size: 1.1rem; font-weight: 700;">{{ job.openings }}</span></div>
+        <div><strong>CTC Package:</strong> <span style="color: #166534; font-weight: 700;">₹{{ job.min_package }} - {{ job.max_package }} LPA</span></div>
+        <div><strong>Posted Date:</strong> {{ job.posted_date }}</div>
+        <div><strong>Deadline:</strong> <span style="font-weight: 600; color: {{ 'red' if is_expired else 'inherit' }};">{{ job.deadline }} {% if is_expired %}(Expired){% endif %}</span></div>
+        <div><strong>Created By:</strong> {{ job.created_by_name or 'Staff' }}</div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-color); margin: 16px 0;">
+
+      <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 8px;">Eligibility Requirements</h4>
+      <div style="font-size: 0.85rem; line-height: 1.8;">
+        <div><strong>Degrees:</strong> {{ job.qualification_req }}</div>
+        <div><strong>Min Academic %:</strong> {{ job.min_percentage }}%</div>
+        <div><strong>Passing Year Batch:</strong> {{ job.min_passing_year }} - {{ job.max_passing_year }}</div>
+        <div><strong>Max Active Backlogs:</strong> {{ job.max_backlogs }}</div>
+        <div><strong>Min Experience:</strong> {{ job.experience_req }} year(s)</div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-color); margin: 16px 0;">
+
+      <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 8px;">Technical Skills Expected</h4>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        {% for sk in job.skills %}
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid var(--border-color); padding: 5px 8px; border-radius: 4px; font-size: 0.82rem;">
+            <span>
+              <strong>{{ sk.skill_name }}</strong>
+              {% if sk.is_mandatory %}
+                <span class="badge badge-cancelled" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 4px;">Mandatory</span>
+              {% else %}
+                <span class="badge badge-inactive" style="font-size: 0.65rem; padding: 1px 5px; margin-left: 4px;">Optional</span>
+              {% endif %}
+            </span>
+            <span style="color: var(--text-muted);">Min: {{ sk.min_proficiency }}</span>
+          </div>
+        {% else %}
+          <div style="color: var(--text-muted); font-size: 0.82rem;">No specific skills tagged.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Applicants Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-users"></i>
+        Candidate Applications ({{ applications|length }})
+      </div>
+      <a href="{{ url_for('apply_job_screen', job_id=job.job_id) }}" class="btn btn-primary btn-sm">Add Applicant</a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Application</th>
+            <th>Candidate</th>
+            <th>Academics</th>
+            <th>Eligibility</th>
+            <th>Current Stage</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+            <tr>
+              <td>
+                <a href="{{ url_for('view_application_detail', application_id=app.application_id) }}" style="font-weight: 600; color: var(--primary);">
+                  {{ app.application_code }}
+                </a>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ app.applied_date }}</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">
+                  <a href="{{ url_for('view_candidate_detail', candidate_id=app.candidate_id) }}" style="color: inherit; text-decoration: none;">
+                    {{ app.first_name }} {{ app.last_name }}
+                  </a>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                  {{ app.candidate_code }} &bull; {{ app.primary_technology }}
+                </div>
+              </td>
+              <td>
+                <div>{{ app.qualification }} ({{ app.passing_year }})</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ app.percentage }}% | Backlogs: {{ app.backlog_count }}</div>
+              </td>
+              <td>
+                <span class="badge badge-{{ 'eligible' if app.eligibility_status == 'ELIGIBLE' else 'not_eligible' }}">
+                  {{ app.eligibility_status }}
+                </span>
+                {% if app.is_override %}
+                  <div style="font-size: 0.7rem; color: var(--warning-text); font-weight: 600;">Override</div>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge stage-{{ app.current_stage.lower() }}">{{ app.current_stage }}</span>
+              </td>
+              <td>
+                <a href="{{ url_for('view_application_detail', application_id=app.application_id) }}" class="btn btn-secondary btn-sm">
+                  View
+                </a>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6" class="empty-state">
+                <div class="empty-state-icon"><i class="fa-regular fa-folder-open"></i></div>
+                <div>No candidates have applied to this job drive yet.</div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block page_title %}Application {{ app.application_code }}{% endblock %}
+{% block page_subtitle %}{{ app.first_name }} {{ app.last_name }} &bull; {{ app.job_title }} at {{ app.company_name }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('list_applications') }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left"></i> All Applications
+  </a>
+
+  {% if app.current_stage in ['SHORTLISTED', 'INTERVIEWED'] %}
+    <a href="{{ url_for('schedule_interview_screen', application_id=app.application_id) }}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-calendar-plus"></i> Schedule Interview
+    </a>
+  {% elif app.current_stage == 'SELECTED' and not offer %}
+    <a href="{{ url_for('create_offer_screen', application_id=app.application_id) }}" class="btn btn-success btn-sm">
+      <i class="fa-solid fa-award"></i> Issue Offer
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Top Application Summary Bar -->
+<div class="card" style="margin-bottom: 20px;">
+  <div class="card-body" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+    <div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Current Stage</div>
+      <div style="margin-top: 4px;">
+        <span class="badge stage-{{ app.current_stage.lower() }}" style="font-size: 0.95rem; padding: 6px 14px;">
+          {{ app.current_stage }}
+        </span>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Eligibility</div>
+      <div style="margin-top: 4px;">
+        <span class="badge badge-{{ 'eligible' if app.eligibility_status == 'ELIGIBLE' else 'not_eligible' }}" style="font-size: 0.85rem;">
+          {{ app.eligibility_status }}
+        </span>
+        {% if app.is_override %}
+          <span class="badge badge-cancelled" style="font-size: 0.75rem;">Override by {{ app.override_by_name or 'Staff' }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Applied On</div>
+      <div style="font-weight: 600; margin-top: 4px;">{{ app.applied_date }}</div>
+    </div>
+
+    <!-- Stage Transition Form -->
+    {% if allowed_next_stages %}
+      <form method="POST" action="{{ url_for('transition_application_stage_action', application_id=app.application_id) }}" style="display: flex; align-items: center; gap: 8px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="new_stage" class="form-select form-select-sm" style="width: auto; font-weight: 600;" required>
+          <option value="">-- Advance Pipeline Stage --</option>
+          {% for stg in allowed_next_stages %}
+            <option value="{{ stg }}">&rarr; Move to {{ stg }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="remarks" class="form-control form-control-sm" placeholder="Remarks (optional)" style="width: 180px;">
+        <button type="submit" class="btn btn-primary btn-sm">Update Stage</button>
+      </form>
+    {% else %}
+      <div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
+        Pipeline Completed ({{ app.current_stage }})
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+  <!-- Left Column: Details & Interview Rounds -->
+  <div>
+    <!-- Candidate & Job Summary Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-circle-info"></i> Candidate & Job Profile</div>
+      </div>
+      <div class="card-body" style="font-size: 0.88rem; line-height: 1.8;">
+        <div><strong>Candidate:</strong> <a href="{{ url_for('view_candidate_detail', candidate_id=app.candidate_id) }}">{{ app.first_name }} {{ app.last_name }}</a> (<code>{{ app.candidate_code }}</code>)</div>
+        <div><strong>Email & Mobile:</strong> {{ app.candidate_email }} &bull; {{ app.candidate_mobile }}</div>
+        <div><strong>Academics:</strong> {{ app.qualification }} ({{ app.passing_year }}), {{ app.percentage }}% score, {{ app.backlog_count }} backlogs</div>
+        <div><strong>Primary Tech:</strong> {{ app.primary_technology }}</div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 12px 0;">
+
+        <div><strong>Job Opening:</strong> <a href="{{ url_for('view_job_detail', job_id=app.job_id) }}">{{ app.job_title }}</a> (<code>{{ app.job_code }}</code>)</div>
+        <div><strong>Recruiter:</strong> <a href="{{ url_for('view_company_detail', company_id=app.company_id) }}">{{ app.company_name }}</a></div>
+        <div><strong>CTC Package:</strong> ₹{{ app.min_package }} - {{ app.max_package }} LPA &bull; {{ app.job_location }}</div>
+
+        {% if app.eligibility_remarks %}
+          <div style="margin-top: 10px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px 10px; font-size: 0.8rem; color: #475569;">
+            <strong>Eligibility Audit:</strong> {{ app.eligibility_remarks }}
+            {% if app.is_override and app.override_reason %}
+              <div style="color: #b45309; margin-top: 4px;"><strong>Staff Override Justification:</strong> {{ app.override_reason }}</div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Interview Rounds & Feedback -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-calendar-check"></i> Interview Rounds ({{ interviews|length }})</div>
+        {% if app.current_stage not in ['REJECTED', 'WITHDRAWN', 'JOINED'] %}
+          <a href="{{ url_for('schedule_interview_screen', application_id=app.application_id) }}" class="btn btn-secondary btn-sm">Schedule Round</a>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% for intv in interviews %}
+          <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 700; font-size: 0.95rem;">Round #{{ intv.round_number }}: {{ intv.round_name }}</span>
+              <span class="badge badge-{{ 'active' if intv.status == 'COMPLETED' else 'open' }}">{{ intv.status }}</span>
+            </div>
+
+            <div style="font-size: 0.85rem; line-height: 1.7; color: #475569;">
+              <div><i class="fa-regular fa-calendar"></i> {{ intv.scheduled_date }} at {{ intv.scheduled_time }} ({{ intv.interview_mode }})</div>
+              <div><i class="fa-solid fa-user-tie"></i> Interviewer: {{ intv.interviewer_name }}</div>
+              <div><i class="fa-solid fa-link"></i> Venue/Link: <a href="{{ intv.meeting_link_or_venue }}" target="_blank">{{ intv.meeting_link_or_venue }}</a></div>
+            </div>
+
+            <!-- Feedback Details if recorded -->
+            {% if intv.feedback_id %}
+              <div style="margin-top: 10px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 10px; font-size: 0.82rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 4px;">
+                  <span>Recommendation: <strong style="color: {{ 'green' if intv.recommendation == 'SELECTED' else ('red' if intv.recommendation == 'REJECTED' else 'orange') }};">{{ intv.recommendation }}</strong></span>
+                  <span>Overall Rating: {{ intv.overall_rating }}/5 <i class="fa-solid fa-star" style="color: #f59e0b;"></i></span>
+                </div>
+                <div>Tech: {{ intv.technical_rating }}/5 &bull; Comm: {{ intv.communication_rating }}/5 &bull; Problem Solving: {{ intv.problem_solving_rating }}/5</div>
+                <div style="margin-top: 4px; color: #1e293b;"><em>"{{ intv.feedback_remarks }}"</em></div>
+              </div>
+            {% else %}
+              <div style="margin-top: 10px; display: flex; gap: 8px;">
+                <a href="{{ url_for('record_feedback_screen', interview_id=intv.interview_id) }}" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-clipboard-check"></i> Submit Feedback
+                </a>
+                <a href="{{ url_for('reschedule_interview_screen', interview_id=intv.interview_id) }}" class="btn btn-secondary btn-sm">
+                  Reschedule
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+            No interview rounds scheduled yet.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Timeline & Offer/Placement -->
+  <div>
+    <!-- Offer & Placement Section -->
+    {% if offer %}
+      <div class="card" style="border: 2px solid #bbf7d0; background: #f0fdf4;">
+        <div class="card-header" style="background: #dcfce7;">
+          <div class="card-title" style="color: #15803d;"><i class="fa-solid fa-award"></i> Job Offer: {{ offer.offer_code }}</div>
+          <span class="badge stage-{{ offer.status.lower() }}">{{ offer.status }}</span>
+        </div>
+        <div class="card-body" style="font-size: 0.88rem; line-height: 1.8;">
+          <div><strong>Designation:</strong> {{ offer.designation }}</div>
+          <div><strong>CTC Package:</strong> <span style="font-size: 1.1rem; font-weight: 700; color: #166534;">₹{{ offer.package_lpa }} LPA</span></div>
+          <div><strong>Offer Date:</strong> {{ offer.offer_date }}</div>
+          <div><strong>Expected Joining Date:</strong> {{ offer.expected_joining_date }}</div>
+          {% if offer.remarks %}
+            <div><strong>Terms/Remarks:</strong> {{ offer.remarks }}</div>
+          {% endif %}
+
+          <div style="margin-top: 12px; display: flex; gap: 8px;">
+            {% if offer.status == 'OFFERED' %}
+              <form method="POST" action="{{ url_for('update_offer_status_action', offer_id=offer.offer_id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="ACCEPTED">
+                <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Accept Offer</button>
+              </form>
+              <form method="POST" action="{{ url_for('update_offer_status_action', offer_id=offer.offer_id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="REJECTED">
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-xmark"></i> Reject Offer</button>
+              </form>
+            {% elif offer.status == 'ACCEPTED' and not placement %}
+              <a href="{{ url_for('record_placement_screen', offer_id=offer.offer_id) }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-handshake"></i> Record Placement & Joining Outcome
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if placement %}
+      <div class="card" style="border: 2px solid #a7f3d0; background: #ecfdf5;">
+        <div class="card-header" style="background: #a7f3d0;">
+          <div class="card-title" style="color: #065f46;"><i class="fa-solid fa-user-check"></i> Confirmed Placement: {{ placement.placement_code }}</div>
+          <span class="badge badge-{{ 'active' if placement.joining_status == 'JOINED' else 'inactive' }}">{{ placement.joining_status }}</span>
+        </div>
+        <div class="card-body" style="font-size: 0.88rem; line-height: 1.8;">
+          <div><strong>Final Package:</strong> ₹{{ placement.final_package_lpa }} LPA</div>
+          <div><strong>Expected Joining:</strong> {{ placement.expected_joining_date }}</div>
+          <div><strong>Actual Joining Date:</strong> {{ placement.actual_joining_date or 'Pending' }}</div>
+          <div><strong>Joining Outcome:</strong> <strong>{{ placement.joining_status }}</strong></div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Application Stage Transition History Timeline -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-timeline"></i> Application History Timeline</div>
+      </div>
+      <div class="card-body">
+        <div class="timeline">
+          {% for h in history %}
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-title">
+                  {% if h.old_stage == 'NONE' %}
+                    <span>Submitted as <strong>{{ h.new_stage }}</strong></span>
+                  {% else %}
+                    <span>{{ h.old_stage }} &rarr; <strong>{{ h.new_stage }}</strong></span>
+                  {% endif %}
+                </div>
+                <div style="font-size: 0.82rem; color: #334155; margin-bottom: 4px;">{{ h.remarks or 'No remarks provided.' }}</div>
+                <div class="timeline-meta">
+                  <i class="fa-regular fa-clock"></i> {{ h.changed_at }} &bull; By: {{ h.changed_by_name or 'System/Staff' }}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

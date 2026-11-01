@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block page_title %}Company Management{% endblock %}
+{% block page_subtitle %}Manage partner recruiting companies, corporate profiles, and HR contacts{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('create_company_screen') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Add New Company
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<form method="GET" action="{{ url_for('list_companies') }}" class="filter-bar">
+  <div class="search-input-group">
+    <input type="text" name="search" class="form-control" placeholder="Search by company name, code, location, HR..." value="{{ filters.search or '' }}">
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="industry" class="form-select">
+      <option value="">All Industries</option>
+      {% for ind in industries %}
+        <option value="{{ ind.industry }}" {% if filters.industry == ind.industry %}selected{% endif %}>
+          {{ ind.industry }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 140px;">
+    <select name="status" class="form-select">
+      <option value="">All Statuses</option>
+      <option value="Active" {% if filters.status == 'Active' %}selected{% endif %}>Active</option>
+      <option value="Inactive" {% if filters.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{{ url_for('list_companies') }}" class="btn btn-secondary btn-sm">Reset</a>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Industry</th>
+          <th>Location</th>
+          <th>Type</th>
+          <th>HR Contact</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comp in companies %}
+          <tr>
+            <td>
+              <div style="font-weight: 600;">
+                <a href="{{ url_for('view_company_detail', company_id=comp.company_id) }}" style="color: var(--primary); text-decoration: none;">
+                  {{ comp.company_name }}
+                </a>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                <code>{{ comp.company_code }}</code>
+                {% if comp.website %}
+                  &bull; <a href="{{ comp.website }}" target="_blank" rel="noopener" style="color: var(--text-light);"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                {% endif %}
+              </div>
+            </td>
+            <td>{{ comp.industry }}</td>
+            <td>{{ comp.location }}</td>
+            <td><span class="badge badge-inactive">{{ comp.company_type }}</span></td>
+            <td>
+              <div style="font-weight: 500;">{{ comp.hr_name }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ comp.hr_email }} &bull; {{ comp.hr_phone }}</div>
+            </td>
+            <td>
+              <span class="badge badge-{{ 'active' if comp.status == 'Active' else 'inactive' }}">
+                {{ comp.status }}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('view_company_detail', company_id=comp.company_id) }}" class="btn btn-secondary btn-sm" title="View Details">
+                  <i class="fa-regular fa-eye"></i>
+                </a>
+                <a href="{{ url_for('edit_company_screen', company_id=comp.company_id) }}" class="btn btn-secondary btn-sm" title="Edit Company">
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </a>
+                {% if comp.status == 'Active' %}
+                  <form method="POST" action="{{ url_for('deactivate_company_action', company_id=comp.company_id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Deactivate Company" data-confirm="Deactivate {{ comp.company_name }}? Historical jobs and placements will be preserved.">
+                      <i class="fa-solid fa-ban"></i>
+                    </button>
+                  </form>
+                {% else %}
+                  <form method="POST" action="{{ url_for('activate_company_action', company_id=comp.company_id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success btn-sm" title="Activate Company">
+                      <i class="fa-solid fa-check"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-building-slash"></i></div>
+              <div>No companies found matching criteria.</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{ candidate.first_name }} {{ candidate.last_name }}{% endblock %}
+{% block page_subtitle %}Candidate Code: {{ candidate.candidate_code }} | Registered on {{ candidate.created_at }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('apply_job_screen', candidate_id=candidate.candidate_id) }}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-paper-plane"></i> Apply for Job
+  </a>
+  <a href="{{ url_for('edit_candidate_screen', candidate_id=candidate.candidate_id) }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-pen-to-square"></i> Edit
+  </a>
+  {% if candidate.profile_status == 'Active' %}
+    <form method="POST" action="{{ url_for('deactivate_candidate_action', candidate_id=candidate.candidate_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm" data-confirm="Deactivate candidate {{ candidate.first_name }} {{ candidate.last_name }}?">
+        <i class="fa-solid fa-user-slash"></i> Deactivate
+      </button>
+    </form>
+  {% else %}
+    <form method="POST" action="{{ url_for('activate_candidate_action', candidate_id=candidate.candidate_id) }}" style="display: inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-success btn-sm">
+        <i class="fa-solid fa-user-check"></i> Reactivate
+      </button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+  <!-- Left Column: Profile Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-user"></i> Candidate Bio</div>
+      <span class="badge badge-{{ 'active' if candidate.profile_status == 'Active' else 'inactive' }}">{{ candidate.profile_status }}</span>
+    </div>
+    <div class="card-body">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 1.8rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+          {{ candidate.first_name[0] }}{{ candidate.last_name[0] }}
+        </div>
+        <h2 style="font-size: 1.2rem; font-weight: 700;">{{ candidate.first_name }} {{ candidate.last_name }}</h2>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">{{ candidate.candidate_code }}</div>
+        <div style="margin-top: 8px;">
+          <span class="badge stage-{{ candidate.placement_status.lower().replace(' ', '_') }}">{{ candidate.placement_status }}</span>
+        </div>
+      </div>
+
+      <div style="font-size: 0.88rem; line-height: 2;">
+        <div><strong>Email:</strong> {{ candidate.email }}</div>
+        <div><strong>Mobile:</strong> {{ candidate.mobile }}</div>
+        <div><strong>Gender:</strong> {{ candidate.gender or 'Not specified' }}</div>
+        <div><strong>Date of Birth:</strong> {{ candidate.date_of_birth or 'N/A' }}</div>
+        <div><strong>Current City:</strong> {{ candidate.current_location }}</div>
+        <div><strong>Preferred Cities:</strong> {{ candidate.preferred_location }}</div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-color); margin: 16px 0;">
+
+      <h4 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 8px;">Academic Record</h4>
+      <div style="font-size: 0.85rem; line-height: 1.8;">
+        <div><strong>Degree:</strong> {{ candidate.qualification }}</div>
+        <div><strong>College:</strong> {{ candidate.college }}</div>
+        <div><strong>University:</strong> {{ candidate.university }}</div>
+        <div><strong>Passing Year:</strong> {{ candidate.passing_year }}</div>
+        <div><strong>Percentage:</strong> {{ candidate.percentage }}%</div>
+        <div><strong>CGPA:</strong> {{ candidate.cgpa or 'N/A' }}</div>
+        <div><strong>Backlogs:</strong> <span style="font-weight: 700; color: {{ 'red' if candidate.backlog_count > 0 else 'green' }};">{{ candidate.backlog_count }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Skills & Applications -->
+  <div>
+    <!-- Technology & Skills Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-code"></i> Technology & Skills</div>
+        <span class="badge badge-inactive">Primary: {{ candidate.primary_technology }} ({{ candidate.skill_proficiency }})</span>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom: 12px; font-size: 0.88rem;">
+          <strong>Relevant Experience:</strong> {{ candidate.experience_years }} year(s)
+        </div>
+
+        <h4 style="font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 10px;">Tagged Skills & Proficiencies</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <div style="background: var(--primary-light); color: var(--primary-dark); border: 1px solid #bfdbfe; border-radius: var(--radius-sm); padding: 5px 10px; font-size: 0.82rem; font-weight: 600;">
+            <i class="fa-solid fa-star" style="color: #f59e0b;"></i> {{ candidate.primary_technology }} ({{ candidate.skill_proficiency }})
+          </div>
+          {% for sk in candidate.skills %}
+            <div style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 5px 10px; font-size: 0.82rem;">
+              {{ sk.skill_name }} &bull; <span style="color: #64748b;">{{ sk.proficiency_level }}</span>
+            </div>
+          {% else %}
+            <div style="color: var(--text-muted); font-size: 0.85rem;">No additional skills mapped.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Application History for this candidate -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-file-contract"></i> Job Applications & Recruitment History</div>
+        <a href="{{ url_for('apply_job_screen', candidate_id=candidate.candidate_id) }}" class="btn btn-primary btn-sm">New Application</a>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Application</th>
+              <th>Job Opening</th>
+              <th>Company</th>
+              <th>Stage</th>
+              <th>Eligibility</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for app in applications %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('view_application_detail', application_id=app.application_id) }}" style="font-weight: 600; color: var(--primary);">
+                    {{ app.application_code }}
+                  </a>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">{{ app.applied_date }}</div>
+                </td>
+                <td>
+                  <a href="{{ url_for('view_job_detail', job_id=app.job_id) }}" style="color: inherit; text-decoration: none;">
+                    {{ app.job_title }}
+                  </a>
+                </td>
+                <td>{{ app.company_name }}</td>
+                <td>
+                  <span class="badge stage-{{ app.current_stage.lower() }}">{{ app.current_stage }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-{{ 'eligible' if app.eligibility_status == 'ELIGIBLE' else 'not_eligible' }}">
+                    {{ app.eligibility_status }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('view_application_detail', application_id=app.application_id) }}" class="btn btn-secondary btn-sm">
+                    View
+                  </a>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="empty-state">
+                  <div class="empty-state-icon"><i class="fa-regular fa-folder-open"></i></div>
+                  <div>No job applications recorded for this candidate yet.</div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

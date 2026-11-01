@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block page_title %}Schedule Interview Round{% endblock %}
+{% block page_subtitle %}Set up candidate evaluation round, interview date/time, interviewer, and meeting venue{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-calendar-plus" style="color: var(--primary);"></i>
+      Interview Scheduling Form
+    </div>
+    <a href="{{ url_for('list_interviews') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to Interviews
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('schedule_interview_action') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="application_id">Candidate Application *</label>
+        <select id="application_id" name="application_id" class="form-select" required>
+          <option value="">-- Choose Application --</option>
+          {% for app in applications %}
+            <option value="{{ app.application_id }}"
+              {% if (selected_application_id|string == app.application_id|string) %}selected{% endif %}>
+              {{ app.application_code }} &bull; {{ app.first_name }} {{ app.last_name }} ({{ app.job_title }} at {{ app.company_name }}) [Stage: {{ app.current_stage }}]
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Select applicant to schedule assessment round for.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="round_number">Round Sequence Number *</label>
+          <input type="number" id="round_number" name="round_number" class="form-control" min="1"
+                 value="{{ default_round_num or 1 }}" required>
+          <div class="form-text">e.g. 1 for first round, 2 for second.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="round_name">Round Type / Name *</label>
+          <input type="text" id="round_name" name="round_name" class="form-control"
+                 value="Technical Assessment" required placeholder="e.g. Technical Round 1, HR Round, Aptitude">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="scheduled_date">Interview Date *</label>
+          <input type="date" id="scheduled_date" name="scheduled_date" class="form-control"
+                 value="{{ default_date }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="scheduled_time">Interview Time *</label>
+          <input type="time" id="scheduled_time" name="scheduled_time" class="form-control"
+                 value="11:00" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="interview_mode">Interview Mode *</label>
+          <select id="interview_mode" name="interview_mode" class="form-select">
+            <option value="Online">Online Video Call</option>
+            <option value="In-person">In-person / On-Campus</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="interviewer_name">Interviewer Name / Panel *</label>
+        <input type="text" id="interviewer_name" name="interviewer_name" class="form-control"
+               required placeholder="e.g. Harish Nair (Lead Architect) or Panel B">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="meeting_link_or_venue">Meeting Link or Campus Venue *</label>
+        <input type="text" id="meeting_link_or_venue" name="meeting_link_or_venue" class="form-control"
+               required placeholder="e.g. https://meet.google.com/xyz-abc or Seminar Hall 2, Placement Block">
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-calendar-check"></i> Schedule Round
+        </button>
+        <a href="{{ url_for('list_interviews') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

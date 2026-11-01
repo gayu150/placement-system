@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / Cache
+.pytest_cache/
+.cache/
+
+# Local Environment & Secrets
+.env
+.venv/
+venv/
+env/
+
+# Database files (generated locally, schema & sample data are in sql/)
+*.db
+*.sqlite3
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

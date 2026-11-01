@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block page_title %}Job Offers Management{% endblock %}
+{% block page_subtitle %}Manage formal employment offers, acceptance outcomes, and compensation packages{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('create_offer_screen') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Issue New Job Offer
+  </a>
+  <a href="{{ url_for('list_placements') }}" class="btn btn-secondary">
+    <i class="fa-solid fa-handshake"></i> Placements & Joining
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<form method="GET" action="{{ url_for('list_offers') }}" class="filter-bar">
+  <div class="search-input-group">
+    <input type="text" name="search" class="form-control" placeholder="Search by offer code, candidate, company, designation..." value="{{ filters.search or '' }}">
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="company_id" class="form-select">
+      <option value="">All Companies</option>
+      {% for comp in companies %}
+        <option value="{{ comp.company_id }}" {% if filters.company_id|string == comp.company_id|string %}selected{% endif %}>
+          {{ comp.company_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 150px;">
+    <select name="status" class="form-select">
+      <option value="">All Offer Statuses</option>
+      <option value="OFFERED" {% if filters.status == 'OFFERED' %}selected{% endif %}>OFFERED</option>
+      <option value="ACCEPTED" {% if filters.status == 'ACCEPTED' %}selected{% endif %}>ACCEPTED</option>
+      <option value="REJECTED" {% if filters.status == 'REJECTED' %}selected{% endif %}>REJECTED</option>
+      <option value="EXPIRED" {% if filters.status == 'EXPIRED' %}selected{% endif %}>EXPIRED</option>
+      <option value="WITHDRAWN" {% if filters.status == 'WITHDRAWN' %}selected{% endif %}>WITHDRAWN</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{{ url_for('list_offers') }}" class="btn btn-secondary btn-sm">Reset</a>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Offer Code</th>
+          <th>Candidate</th>
+          <th>Company & Job</th>
+          <th>Designation</th>
+          <th>CTC Package</th>
+          <th>Dates</th>
+          <th>Status</th>
+          <th>Placement / Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in offers %}
+          <tr>
+            <td>
+              <strong style="color: var(--primary);">{{ o.offer_code }}</strong>
+            </td>
+            <td>
+              <div style="font-weight: 600;">
+                <a href="{{ url_for('view_candidate_detail', candidate_id=o.candidate_id) }}" style="color: inherit; text-decoration: none;">
+                  {{ o.first_name }} {{ o.last_name }}
+                </a>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ o.candidate_code }}</div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ o.company_name }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ o.job_title }}</div>
+            </td>
+            <td>{{ o.designation }}</td>
+            <td>
+              <span style="font-weight: 700; color: #166534; font-size: 0.95rem;">₹{{ o.package_lpa }} LPA</span>
+            </td>
+            <td>
+              <div style="font-size: 0.8rem;">Offered: {{ o.offer_date }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Joining: {{ o.expected_joining_date }}</div>
+            </td>
+            <td>
+              <span class="badge stage-{{ o.status.lower() }}">{{ o.status }}</span>
+            </td>
+            <td>
+              {% if o.status == 'OFFERED' %}
+                <div style="display: flex; gap: 4px;">
+                  <form method="POST" action="{{ url_for('update_offer_status_action', offer_id=o.offer_id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="status" value="ACCEPTED">
+                    <button type="submit" class="btn btn-success btn-sm" title="Accept Offer">
+                      <i class="fa-solid fa-check"></i> Accept
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('update_offer_status_action', offer_id=o.offer_id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="status" value="REJECTED">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Reject Offer">
+                      <i class="fa-solid fa-xmark"></i> Reject
+                    </button>
+                  </form>
+                </div>
+              {% elif o.status == 'ACCEPTED' and not o.placement_id %}
+                <a href="{{ url_for('record_placement_screen', offer_id=o.offer_id) }}" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-handshake"></i> Record Placement
+                </a>
+              {% elif o.placement_id %}
+                <span class="badge badge-active" style="font-size: 0.75rem;">
+                  {{ o.joining_status }}
+                </span>
+              {% else %}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+              <div>No offer letters match your criteria.</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

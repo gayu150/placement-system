@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Recruitment & Placement Management System{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="{{ url_for('dashboard') }}" class="sidebar-brand">
+          <div class="brand-icon">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <div>
+            <div class="brand-title">Recruit & Place</div>
+            <div class="brand-subtitle">Placement Portal</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Core Operations</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('list_candidates') }}" class="nav-item {% if 'candidate' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-user-graduate"></i></span>
+          <span>Candidates</span>
+        </a>
+        <a href="{{ url_for('list_companies') }}" class="nav-item {% if 'compan' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-building"></i></span>
+          <span>Companies</span>
+        </a>
+        <a href="{{ url_for('list_jobs') }}" class="nav-item {% if 'job' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-briefcase"></i></span>
+          <span>Job Openings</span>
+        </a>
+
+        <div class="nav-section-title">Recruitment Pipeline</div>
+        <a href="{{ url_for('list_applications') }}" class="nav-item {% if 'application' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-file-signature"></i></span>
+          <span>Applications</span>
+        </a>
+        <a href="{{ url_for('list_interviews') }}" class="nav-item {% if 'interview' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-calendar-check"></i></span>
+          <span>Interviews & Feedback</span>
+        </a>
+        <a href="{{ url_for('list_offers') }}" class="nav-item {% if 'offer' in request.endpoint and 'placement' not in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-award"></i></span>
+          <span>Offers</span>
+        </a>
+        <a href="{{ url_for('list_placements') }}" class="nav-item {% if 'placement' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-handshake"></i></span>
+          <span>Placements & Joining</span>
+        </a>
+
+        <div class="nav-section-title">Analytics & Audit</div>
+        <a href="{{ url_for('reports_hub') }}" class="nav-item {% if 'report' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+          <span>Reports & Analytics</span>
+        </a>
+        <a href="{{ url_for('view_activity_logs') }}" class="nav-item {% if 'activity' in request.endpoint %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+          <span>Activity Audit Logs</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar">
+            {{ session.get('full_name', 'U')[0] }}
+          </div>
+          <div class="user-info">
+            <div class="user-name">{{ session.get('full_name', 'User') }}</div>
+            <div class="user-role-badge">{{ session.get('role_name', 'Staff') }}</div>
+          </div>
+          <a href="{{ url_for('logout') }}" title="Sign Out" style="color: #ef4444; font-size: 1.1rem; padding: 4px;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Application Panel -->
+    <main class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarToggle" class="btn btn-secondary btn-sm" style="display: none;">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div>
+            <h1 class="page-heading">{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="page-subheading">{% block page_subtitle %}Recruitment & Placement Management System{% endblock %}</div>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          {% block topbar_actions %}{% endblock %}
+        </div>
+      </header>
+
+      <div class="content-body">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'error' or category == 'danger' %}fa-circle-exclamation{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                <div style="flex: 1;">{{ message }}</div>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Page specific content -->
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+

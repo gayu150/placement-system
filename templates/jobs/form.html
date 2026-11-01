@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+  {% if is_edit %}Edit Job Opening{% else %}Post New Job Opening{% endif %}
+{% endblock %}
+{% block page_subtitle %}
+  {% if is_edit %}Updating criteria for {{ job.title }} ({{ job.job_code }}){% else %}Create campus placement drive and configure candidate eligibility rules{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-briefcase" style="color: var(--primary);"></i>
+      Job Drive Configuration Form
+    </div>
+    <a href="{{ url_for('list_jobs') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="{% if is_edit %}{{ url_for('edit_job_action', job_id=job.job_id) }}{% else %}{{ url_for('create_job_action') }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- Section: Basic Job Info -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        1. Role & Company Overview
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="job_code">Job Code *</label>
+          <input type="text" id="job_code" name="job_code" class="form-control"
+                 value="{{ job.job_code if job else default_code }}" required
+                 {% if is_edit %}readonly style="background: #f1f5f9;"{% endif %}>
+          <div class="form-text">Unique job drive code (e.g. JOB-2026-006)</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="company_id">Recruiting Company *</label>
+          <select id="company_id" name="company_id" class="form-select" required>
+            <option value="">Select Partner Company</option>
+            {% for comp in companies %}
+              <option value="{{ comp.company_id }}"
+                {% if (job and job.company_id == comp.company_id) or (selected_company_id|string == comp.company_id|string) %}selected{% endif %}>
+                {{ comp.company_name }} ({{ comp.location }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="title">Job Title *</label>
+          <input type="text" id="title" name="title" class="form-control"
+                 value="{{ job.title if job else '' }}" required placeholder="e.g. Associate Backend Engineer">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="employment_type">Employment Type *</label>
+          <select id="employment_type" name="employment_type" class="form-select">
+            <option value="Full-time" {% if not job or job.employment_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+            <option value="Internship" {% if job and job.employment_type == 'Internship' %}selected{% endif %}>Internship</option>
+            <option value="Contract" {% if job and job.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="location">Job Location *</label>
+          <input type="text" id="location" name="location" class="form-control"
+                 value="{{ job.location if job else '' }}" required placeholder="e.g. Bengaluru, Remote, Hybrid">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="openings">Vacancies / Openings Count *</label>
+          <input type="number" id="openings" name="openings" class="form-control" min="1"
+                 value="{{ job.openings if job else 5 }}" required>
+          <div class="form-text">Must be greater than zero.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="min_package">Min Package (CTC in LPA) *</label>
+          <input type="number" step="0.1" id="min_package" name="min_package" class="form-control" min="0"
+                 value="{{ job.min_package if job else '6.00' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="max_package">Max Package (CTC in LPA) *</label>
+          <input type="number" step="0.1" id="max_package" name="max_package" class="form-control" min="0"
+                 value="{{ job.max_package if job else '9.00' }}" required>
+          <div class="form-text">Cannot be less than Min Package.</div>
+        </div>
+      </div>
+
+      <!-- Section: Eligibility Thresholds -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 20px 0 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        2. Eligibility Criteria & Filters
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="qualification_req">Eligible Degrees / Qualifications *</label>
+          <input type="text" id="qualification_req" name="qualification_req" class="form-control"
+                 value="{{ job.qualification_req if job else 'B.Tech, MCA' }}" required placeholder="e.g. B.Tech, MCA or Any">
+          <div class="form-text">Comma-separated degrees, or type 'Any' for all.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="min_percentage">Minimum Percentage Required *</label>
+          <input type="number" step="0.01" id="min_percentage" name="min_percentage" class="form-control" min="0" max="100"
+                 value="{{ job.min_percentage if job else '65.00' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="max_backlogs">Max Allowed Active Backlogs *</label>
+          <input type="number" id="max_backlogs" name="max_backlogs" class="form-control" min="0"
+                 value="{{ job.max_backlogs if job else 0 }}" required>
+          <div class="form-text">0 means backlogs strictly not permitted.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="min_passing_year">Min Passing Year *</label>
+          <input type="number" id="min_passing_year" name="min_passing_year" class="form-control"
+                 value="{{ job.min_passing_year if job else 2025 }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="max_passing_year">Max Passing Year *</label>
+          <input type="number" id="max_passing_year" name="max_passing_year" class="form-control"
+                 value="{{ job.max_passing_year if job else 2026 }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="experience_req">Min Experience Required (Years)</label>
+          <input type="number" step="0.1" id="experience_req" name="experience_req" class="form-control" min="0"
+                 value="{{ job.experience_req if job else '0.0' }}">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="posted_date">Posted Date *</label>
+          <input type="date" id="posted_date" name="posted_date" class="form-control"
+                 value="{{ job.posted_date if job else default_posted_date }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="deadline">Application Deadline *</label>
+          <input type="date" id="deadline" name="deadline" class="form-control"
+                 value="{{ job.deadline if job else default_deadline }}" required>
+          <div class="form-text">Cannot be prior to Posted Date.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="status">Job Drive Status *</label>
+          <select id="status" name="status" class="form-select">
+            <option value="Open" {% if not job or job.status == 'Open' %}selected{% endif %}>Open</option>
+            <option value="Draft" {% if job and job.status == 'Draft' %}selected{% endif %}>Draft</option>
+            <option value="Closed" {% if job and job.status == 'Closed' %}selected{% endif %}>Closed</option>
+            <option value="Cancelled" {% if job and job.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Section: Skill Requirements -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 20px 0 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        3. Technical Skill Requirements
+      </h3>
+
+      <div class="form-group">
+        <label class="form-label">Specify Required Skills, Mandatory Flag, and Minimum Proficiency</label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius-sm);">
+          {% for sk in all_skills %}
+            {% set is_req = sk.skill_id in job_skill_ids %}
+            {% set is_mand = job_skill_mandatory.get(sk.skill_id, 1) %}
+            {% set min_prof = job_skill_profs.get(sk.skill_id, 'Intermediate') %}
+            <div style="background: #fff; border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 6px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                <input type="checkbox" name="skill_ids" value="{{ sk.skill_id }}" {% if is_req %}checked{% endif %}>
+                <span>{{ sk.skill_name }}</span>
+                <span class="badge badge-inactive" style="font-size: 0.65rem; margin-left: auto;">{{ sk.category }}</span>
+              </label>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.75rem;">
+                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                  <input type="checkbox" name="mandatory_{{ sk.skill_id }}" value="1" {% if is_mand %}checked{% endif %}>
+                  <span>Mandatory</span>
+                </label>
+                <select name="prof_{{ sk.skill_id }}" class="form-select form-select-sm" style="width: 110px; padding: 2px 4px; font-size: 0.75rem;">
+                  <option value="Beginner" {% if min_prof == 'Beginner' %}selected{% endif %}>Beginner</option>
+                  <option value="Intermediate" {% if min_prof == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                  <option value="Advanced" {% if min_prof == 'Advanced' %}selected{% endif %}>Advanced</option>
+                  <option value="Expert" {% if min_prof == 'Expert' %}selected{% endif %}>Expert</option>
+                </select>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> {% if is_edit %}Save Changes{% else %}Post Job Opening{% endif %}
+        </button>
+        <a href="{{ url_for('list_jobs') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

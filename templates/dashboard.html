@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+{% block page_subtitle %}Live metrics, open jobs, upcoming interviews, and recent activity{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('apply_job_screen') }}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus"></i> Record Application
+  </a>
+  <a href="{{ url_for('create_job_screen') }}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-briefcase"></i> Post New Job
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Metric Summary Cards -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-icon-box metric-icon-blue">
+      <i class="fa-solid fa-user-graduate"></i>
+    </div>
+    <div>
+      <div class="metric-value">{{ metrics.total_candidates }}</div>
+      <div class="metric-label">Total Candidates</div>
+      <div class="metric-sub">{{ metrics.active_candidates }} Active | {{ metrics.placed_candidates }} Placed</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box metric-icon-indigo">
+      <i class="fa-solid fa-building"></i>
+    </div>
+    <div>
+      <div class="metric-value">{{ metrics.total_companies }}</div>
+      <div class="metric-label">Registered Companies</div>
+      <div class="metric-sub">{{ metrics.active_companies }} Active Partners</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box metric-icon-amber">
+      <i class="fa-solid fa-briefcase"></i>
+    </div>
+    <div>
+      <div class="metric-value">{{ metrics.open_jobs }}</div>
+      <div class="metric-label">Open Job Drives</div>
+      <div class="metric-sub">{{ metrics.total_openings }} Total Vacancies</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box metric-icon-green">
+      <i class="fa-solid fa-award"></i>
+    </div>
+    <div>
+      <div class="metric-value">{{ metrics.total_offers }}</div>
+      <div class="metric-label">Offers Issued</div>
+      <div class="metric-sub">{{ metrics.accepted_offers }} Accepted by Students</div>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box metric-icon-green">
+      <i class="fa-solid fa-handshake"></i>
+    </div>
+    <div>
+      <div class="metric-value">{{ metrics.confirmed_placements }}</div>
+      <div class="metric-label">Confirmed Placed</div>
+      <div class="metric-sub">Avg Package: ₹{{ metrics.avg_package }} LPA</div>
+    </div>
+  </div>
+</div>
+
+<!-- Applications By Stage Banner -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-diagram-project" style="color: var(--primary);"></i>
+      Application Stages Breakdown
+    </div>
+    <a href="{{ url_for('list_applications') }}" class="btn btn-secondary btn-sm">View All Applications</a>
+  </div>
+  <div class="card-body">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+      {% for stage in metrics.stage_counts %}
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px 14px; display: flex; align-items: center; gap: 10px;">
+          <span class="badge stage-{{ stage.current_stage.lower() }}">{{ stage.current_stage }}</span>
+          <span style="font-weight: 700; font-size: 1.1rem; color: #1e293b;">{{ stage.count }}</span>
+        </div>
+      {% else %}
+        <div class="text-muted">No applications recorded yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Dual Columns: Upcoming Interviews & Selected Candidates -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+  <!-- Upcoming Interviews -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i>
+        Upcoming & Scheduled Interviews
+      </div>
+      <a href="{{ url_for('list_interviews') }}" class="btn btn-secondary btn-sm">View Calendar</a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Candidate</th>
+            <th>Company & Job</th>
+            <th>Schedule</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for intv in metrics.upcoming_interviews %}
+            <tr>
+              <td>
+                <span style="font-weight: 600;">R#{{ intv.round_number }}</span>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ intv.round_name }}</div>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ intv.first_name }} {{ intv.last_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ intv.candidate_code }}</div>
+              </td>
+              <td>
+                <div>{{ intv.company_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ intv.job_title }}</div>
+              </td>
+              <td>
+                <div><i class="fa-regular fa-calendar"></i> {{ intv.scheduled_date }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> {{ intv.scheduled_time }} ({{ intv.interview_mode }})</div>
+              </td>
+              <td>
+                <a href="{{ url_for('record_feedback_screen', interview_id=intv.interview_id) }}" class="btn btn-primary btn-sm">
+                  Feedback
+                </a>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="empty-state">
+                <div class="empty-state-icon"><i class="fa-regular fa-calendar-check"></i></div>
+                <div>No pending scheduled interviews.</div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Selected Candidates Awaiting Offers / Placement -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-check-double" style="color: var(--success);"></i>
+        Selected Candidates
+      </div>
+      <a href="{{ url_for('list_offers') }}" class="btn btn-secondary btn-sm">Offers List</a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Selected For</th>
+            <th>Current Stage</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sel in metrics.selected_candidates %}
+            <tr>
+              <td>
+                <div style="font-weight: 600;">{{ sel.first_name }} {{ sel.last_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ sel.candidate_code }} ({{ sel.primary_technology }})</div>
+              </td>
+              <td>
+                <div>{{ sel.company_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ sel.job_title }}</div>
+              </td>
+              <td>
+                <span class="badge stage-{{ sel.current_stage.lower() }}">{{ sel.current_stage }}</span>
+              </td>
+              <td>
+                {% if sel.current_stage == 'SELECTED' %}
+                  <a href="{{ url_for('create_offer_screen', application_id=sel.application_id) }}" class="btn btn-success btn-sm">
+                    <i class="fa-solid fa-file-invoice"></i> Issue Offer
+                  </a>
+                {% else %}
+                  <a href="{{ url_for('view_application_detail', application_id=sel.application_id) }}" class="btn btn-secondary btn-sm">
+                    View
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-user-check"></i></div>
+                <div>No candidates currently in Selected or Offered stages.</div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity Logs Card -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-clock-rotate-left" style="color: var(--info);"></i>
+      Recent System Activity
+    </div>
+    <a href="{{ url_for('view_activity_logs') }}" class="btn btn-secondary btn-sm">Full Audit Trail</a>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Module</th>
+          <th>Action</th>
+          <th>Record ID</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for act in recent_activities %}
+          <tr>
+            <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">{{ act.created_at }}</td>
+            <td><span style="font-weight: 600;">{{ act.user_name or 'System' }}</span></td>
+            <td><span class="badge badge-inactive">{{ act.module }}</span></td>
+            <td><strong>{{ act.action }}</strong></td>
+            <td><code>{{ act.record_id or '-' }}</code></td>
+            <td>{{ act.description }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="empty-state">No recent activity recorded.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+  {% if is_edit %}Edit Company Details{% else %}Register New Company{% endif %}
+{% endblock %}
+{% block page_subtitle %}
+  {% if is_edit %}Updating corporate profile for {{ company.company_name }}{% else %}Add a corporate recruitment partner and contact information{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-building" style="color: var(--primary);"></i>
+      Company Details Form
+    </div>
+    <a href="{{ url_for('list_companies') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="{% if is_edit %}{{ url_for('edit_company_action', company_id=company.company_id) }}{% else %}{{ url_for('create_company_action') }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="company_code">Company Code *</label>
+          <input type="text" id="company_code" name="company_code" class="form-control"
+                 value="{{ company.company_code if company else default_code }}" required
+                 {% if is_edit %}readonly style="background: #f1f5f9;"{% endif %}>
+          <div class="form-text">Unique company identifier (e.g. COMP-107)</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="company_name">Company Name *</label>
+          <input type="text" id="company_name" name="company_name" class="form-control"
+                 value="{{ company.company_name if company else '' }}" required placeholder="e.g. TechNova Solutions">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="industry">Industry Domain *</label>
+          <input type="text" id="industry" name="industry" class="form-control"
+                 value="{{ company.industry if company else '' }}" required placeholder="e.g. Information Technology, FinTech, Healthcare">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="company_type">Company Type *</label>
+          <select id="company_type" name="company_type" class="form-select">
+            <option value="Product" {% if company and company.company_type == 'Product' %}selected{% endif %}>Product Based</option>
+            <option value="Service" {% if not company or company.company_type == 'Service' %}selected{% endif %}>Service Based</option>
+            <option value="Startup" {% if company and company.company_type == 'Startup' %}selected{% endif %}>Startup</option>
+            <option value="MNC" {% if company and company.company_type == 'MNC' %}selected{% endif %}>MNC / Enterprise</option>
+            <option value="Consulting" {% if company and company.company_type == 'Consulting' %}selected{% endif %}>Consulting</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="location">Primary Location / HQ *</label>
+          <input type="text" id="location" name="location" class="form-control"
+                 value="{{ company.location if company else '' }}" required placeholder="e.g. Bengaluru">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="website">Website URL</label>
+        <input type="url" id="website" name="website" class="form-control"
+               value="{{ company.website if company and company.website else '' }}" placeholder="https://example.com">
+      </div>
+
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 20px 0 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        HR & Campus Relations Contact
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="hr_name">HR Contact Name *</label>
+          <input type="text" id="hr_name" name="hr_name" class="form-control"
+                 value="{{ company.hr_name if company else '' }}" required placeholder="e.g. Sunita Rao">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="hr_email">HR Email Address *</label>
+          <input type="email" id="hr_email" name="hr_email" class="form-control"
+                 value="{{ company.hr_email if company else '' }}" required placeholder="hr@company.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="hr_phone">HR Phone Number *</label>
+          <input type="text" id="hr_phone" name="hr_phone" class="form-control"
+                 value="{{ company.hr_phone if company else '' }}" required placeholder="Contact phone number">
+        </div>
+      </div>
+
+      <div class="form-group" style="max-width: 250px;">
+        <label class="form-label" for="status">Company Status</label>
+        <select id="status" name="status" class="form-select">
+          <option value="Active" {% if not company or company.status == 'Active' %}selected{% endif %}>Active</option>
+          <option value="Inactive" {% if company and company.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> {% if is_edit %}Save Changes{% else %}Register Company{% endif %}
+        </button>
+        <a href="{{ url_for('list_companies') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

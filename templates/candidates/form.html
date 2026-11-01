@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+  {% if is_edit %}Edit Candidate Profile{% else %}Register New Candidate{% endif %}
+{% endblock %}
+{% block page_subtitle %}
+  {% if is_edit %}Updating records for {{ candidate.first_name }} {{ candidate.last_name }} ({{ candidate.candidate_code }}){% else %}Create student profile, academic credentials, and technology stack{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-id-card" style="color: var(--primary);"></i>
+      Candidate Details Form
+    </div>
+    <a href="{{ url_for('list_candidates') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to List
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="{% if is_edit %}{{ url_for('edit_candidate_action', candidate_id=candidate.candidate_id) }}{% else %}{{ url_for('create_candidate_action') }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- Section: Personal Identification -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin-bottom: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        1. Personal & Contact Information
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="candidate_code">Candidate Code *</label>
+          <input type="text" id="candidate_code" name="candidate_code" class="form-control"
+                 value="{{ candidate.candidate_code if candidate else default_code }}" required
+                 {% if is_edit %}readonly style="background: #f1f5f9;"{% endif %}>
+          <div class="form-text">Unique identification code (e.g. CAND-2026-009)</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="first_name">First Name *</label>
+          <input type="text" id="first_name" name="first_name" class="form-control"
+                 value="{{ candidate.first_name if candidate else '' }}" required placeholder="e.g. Aarav">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="last_name">Last Name *</label>
+          <input type="text" id="last_name" name="last_name" class="form-control"
+                 value="{{ candidate.last_name if candidate else '' }}" required placeholder="e.g. Sharma">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address *</label>
+          <input type="email" id="email" name="email" class="form-control"
+                 value="{{ candidate.email if candidate else '' }}" required placeholder="student@example.edu">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mobile">Mobile Number *</label>
+          <input type="text" id="mobile" name="mobile" class="form-control"
+                 value="{{ candidate.mobile if candidate else '' }}" required placeholder="10-digit mobile number">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="gender">Gender</label>
+          <select id="gender" name="gender" class="form-select">
+            <option value="">Select Gender</option>
+            <option value="Male" {% if candidate and candidate.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if candidate and candidate.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if candidate and candidate.gender == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="date_of_birth">Date of Birth</label>
+          <input type="date" id="date_of_birth" name="date_of_birth" class="form-control"
+                 value="{{ candidate.date_of_birth if candidate and candidate.date_of_birth else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="current_location">Current Location *</label>
+          <input type="text" id="current_location" name="current_location" class="form-control"
+                 value="{{ candidate.current_location if candidate else '' }}" required placeholder="e.g. Bengaluru">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="preferred_location">Preferred Location(s) *</label>
+          <input type="text" id="preferred_location" name="preferred_location" class="form-control"
+                 value="{{ candidate.preferred_location if candidate else '' }}" required placeholder="e.g. Bengaluru, Pune, Remote">
+        </div>
+      </div>
+
+      <!-- Section: Academic Background -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 20px 0 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        2. Academic Background
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="qualification">Degree / Qualification *</label>
+          <input type="text" id="qualification" name="qualification" class="form-control"
+                 value="{{ candidate.qualification if candidate else 'B.Tech' }}" required placeholder="e.g. B.Tech, MCA, B.Sc">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="college">College Name *</label>
+          <input type="text" id="college" name="college" class="form-control"
+                 value="{{ candidate.college if candidate else '' }}" required placeholder="e.g. National Institute of Tech">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="university">University *</label>
+          <input type="text" id="university" name="university" class="form-control"
+                 value="{{ candidate.university if candidate else '' }}" required placeholder="e.g. State Technical University">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="passing_year">Passing Year *</label>
+          <input type="number" id="passing_year" name="passing_year" class="form-control" min="2000" max="2035"
+                 value="{{ candidate.passing_year if candidate else 2026 }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="percentage">Percentage (0.0 - 100.0) *</label>
+          <input type="number" step="0.01" id="percentage" name="percentage" class="form-control" min="0" max="100"
+                 value="{{ candidate.percentage if candidate else '75.00' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cgpa">CGPA (Optional)</label>
+          <input type="number" step="0.01" id="cgpa" name="cgpa" class="form-control" min="0" max="10"
+                 value="{{ candidate.cgpa if candidate and candidate.cgpa else '' }}" placeholder="e.g. 8.2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="backlog_count">Active Backlogs Count *</label>
+          <input type="number" id="backlog_count" name="backlog_count" class="form-control" min="0"
+                 value="{{ candidate.backlog_count if candidate else 0 }}" required>
+          <div class="form-text">Enter 0 if no active backlogs.</div>
+        </div>
+      </div>
+
+      <!-- Section: Technical Stack & Skills -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 20px 0 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        3. Technical Profile & Additional Skills
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="primary_technology">Primary Technology *</label>
+          <input type="text" id="primary_technology" name="primary_technology" class="form-control"
+                 value="{{ candidate.primary_technology if candidate else 'Python' }}" required placeholder="e.g. Python, Java, React, Data Science">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="skill_proficiency">Primary Proficiency *</label>
+          <select id="skill_proficiency" name="skill_proficiency" class="form-select">
+            <option value="Beginner" {% if candidate and candidate.skill_proficiency == 'Beginner' %}selected{% endif %}>Beginner</option>
+            <option value="Intermediate" {% if not candidate or candidate.skill_proficiency == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+            <option value="Advanced" {% if candidate and candidate.skill_proficiency == 'Advanced' %}selected{% endif %}>Advanced</option>
+            <option value="Expert" {% if candidate and candidate.skill_proficiency == 'Expert' %}selected{% endif %}>Expert</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="experience_years">Experience (Years)</label>
+          <input type="number" step="0.1" id="experience_years" name="experience_years" class="form-control" min="0"
+                 value="{{ candidate.experience_years if candidate else '0.0' }}">
+          <div class="form-text">0 for freshers.</div>
+        </div>
+      </div>
+
+      <!-- Additional Skills Multi-Select with Proficiency -->
+      <div class="form-group" style="margin-top: 10px;">
+        <label class="form-label">Select Additional Known Skills & Levels</label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius-sm);">
+          {% for sk in all_skills %}
+            {% set is_selected = sk.skill_id in candidate_skill_ids %}
+            {% set prof_val = candidate_skill_profs.get(sk.skill_id, 'Intermediate') %}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer; flex: 1;">
+                <input type="checkbox" name="skill_ids" value="{{ sk.skill_id }}" {% if is_selected %}checked{% endif %}>
+                <span>{{ sk.skill_name }}</span>
+              </label>
+              <select name="prof_{{ sk.skill_id }}" class="form-select form-select-sm" style="width: 105px; padding: 2px 4px; font-size: 0.75rem;">
+                <option value="Beginner" {% if prof_val == 'Beginner' %}selected{% endif %}>Beginner</option>
+                <option value="Intermediate" {% if prof_val == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                <option value="Advanced" {% if prof_val == 'Advanced' %}selected{% endif %}>Advanced</option>
+                <option value="Expert" {% if prof_val == 'Expert' %}selected{% endif %}>Expert</option>
+              </select>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Section: Statuses -->
+      <h3 style="font-size: 0.95rem; font-weight: 700; color: #334155; margin: 20px 0 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+        4. Status & Placement State
+      </h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="profile_status">Profile Status</label>
+          <select id="profile_status" name="profile_status" class="form-select">
+            <option value="Active" {% if not candidate or candidate.profile_status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if candidate and candidate.profile_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="placement_status">Placement Status</label>
+          <select id="placement_status" name="placement_status" class="form-select">
+            <option value="Unplaced" {% if not candidate or candidate.placement_status == 'Unplaced' %}selected{% endif %}>Unplaced</option>
+            <option value="In Process" {% if candidate and candidate.placement_status == 'In Process' %}selected{% endif %}>In Process</option>
+            <option value="Placed" {% if candidate and candidate.placement_status == 'Placed' %}selected{% endif %}>Placed</option>
+            <option value="Opted Out" {% if candidate and candidate.placement_status == 'Opted Out' %}selected{% endif %}>Opted Out</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> {% if is_edit %}Save Changes{% else %}Create Candidate Profile{% endif %}
+        </button>
+        <a href="{{ url_for('list_candidates') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

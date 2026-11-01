@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block page_title %}Candidate Management{% endblock %}
+{% block page_subtitle %}Manage student profiles, academic records, and recruitment statuses{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('create_candidate_screen') }}" class="btn btn-primary">
+    <i class="fa-solid fa-user-plus"></i> Add New Candidate
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Search & Filter Controls -->
+<form method="GET" action="{{ url_for('list_candidates') }}" class="filter-bar">
+  <div class="search-input-group">
+    <input type="text" name="search" class="form-control" placeholder="Search by name, code, email, mobile, college..." value="{{ filters.search or '' }}">
+  </div>
+
+  <div style="min-width: 150px;">
+    <select name="technology" class="form-select">
+      <option value="">All Technologies</option>
+      {% for tech in technologies %}
+        <option value="{{ tech.primary_technology }}" {% if filters.technology == tech.primary_technology %}selected{% endif %}>
+          {{ tech.primary_technology }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 130px;">
+    <select name="passing_year" class="form-select">
+      <option value="">All Years</option>
+      {% for yr in [2024, 2025, 2026, 2027] %}
+        <option value="{{ yr }}" {% if filters.passing_year|string == yr|string %}selected{% endif %}>{{ yr }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 140px;">
+    <select name="profile_status" class="form-select">
+      <option value="">All Profile Status</option>
+      <option value="Active" {% if filters.profile_status == 'Active' %}selected{% endif %}>Active</option>
+      <option value="Inactive" {% if filters.profile_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+
+  <div style="min-width: 150px;">
+    <select name="placement_status" class="form-select">
+      <option value="">All Placement Status</option>
+      <option value="Unplaced" {% if filters.placement_status == 'Unplaced' %}selected{% endif %}>Unplaced</option>
+      <option value="In Process" {% if filters.placement_status == 'In Process' %}selected{% endif %}>In Process</option>
+      <option value="Placed" {% if filters.placement_status == 'Placed' %}selected{% endif %}>Placed</option>
+      <option value="Opted Out" {% if filters.placement_status == 'Opted Out' %}selected{% endif %}>Opted Out</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{{ url_for('list_candidates') }}" class="btn btn-secondary btn-sm">Reset</a>
+</form>
+
+<!-- Candidates Data Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Candidate</th>
+          <th>Contact</th>
+          <th>Academics</th>
+          <th>Tech & Skills</th>
+          <th>Location</th>
+          <th>Profile</th>
+          <th>Placement</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cand in candidates %}
+          <tr>
+            <td>
+              <div style="font-weight: 600;">
+                <a href="{{ url_for('view_candidate_detail', candidate_id=cand.candidate_id) }}" style="color: var(--primary); text-decoration: none;">
+                  {{ cand.first_name }} {{ cand.last_name }}
+                </a>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                <code>{{ cand.candidate_code }}</code>
+              </div>
+            </td>
+            <td>
+              <div><i class="fa-regular fa-envelope" style="color: var(--text-light); width: 14px;"></i> {{ cand.email }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-phone" style="color: var(--text-light); width: 14px;"></i> {{ cand.mobile }}</div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ cand.qualification }} ({{ cand.passing_year }})</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                {{ cand.percentage }}% | Backlogs: <strong style="color: {{ 'red' if cand.backlog_count > 0 else 'inherit' }};">{{ cand.backlog_count }}</strong>
+              </div>
+            </td>
+            <td>
+              <div><span class="badge badge-inactive">{{ cand.primary_technology }}</span></div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">{{ cand.skill_proficiency }}</div>
+            </td>
+            <td>
+              <div>{{ cand.current_location }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Pref: {{ cand.preferred_location }}</div>
+            </td>
+            <td>
+              <span class="badge badge-{{ 'active' if cand.profile_status == 'Active' else 'inactive' }}">
+                {{ cand.profile_status }}
+              </span>
+            </td>
+            <td>
+              <span class="badge stage-{{ cand.placement_status.lower().replace(' ', '_') }}">
+                {{ cand.placement_status }}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('view_candidate_detail', candidate_id=cand.candidate_id) }}" class="btn btn-secondary btn-sm" title="View Details">
+                  <i class="fa-regular fa-eye"></i>
+                </a>
+                <a href="{{ url_for('edit_candidate_screen', candidate_id=cand.candidate_id) }}" class="btn btn-secondary btn-sm" title="Edit Profile">
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </a>
+                {% if cand.profile_status == 'Active' %}
+                  <form method="POST" action="{{ url_for('deactivate_candidate_action', candidate_id=cand.candidate_id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Deactivate Candidate" data-confirm="Deactivate candidate {{ cand.first_name }} {{ cand.last_name }}? Historical records will be safely preserved.">
+                      <i class="fa-solid fa-user-slash"></i>
+                    </button>
+                  </form>
+                {% else %}
+                  <form method="POST" action="{{ url_for('activate_candidate_action', candidate_id=cand.candidate_id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success btn-sm" title="Activate Candidate">
+                      <i class="fa-solid fa-user-check"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-user-slash"></i></div>
+              <div>No candidate records matching your search or filters.</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block page_title %}Application Management{% endblock %}
+{% block page_subtitle %}Track candidate progress through the recruitment lifecycle stages{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ url_for('apply_job_screen') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus"></i> Record Application
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<form method="GET" action="{{ url_for('list_applications') }}" class="filter-bar">
+  <div class="search-input-group">
+    <input type="text" name="search" class="form-control" placeholder="Search by app code, candidate, job, company..." value="{{ filters.search or '' }}">
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="job_id" class="form-select">
+      <option value="">All Job Drives</option>
+      {% for j in jobs %}
+        <option value="{{ j.job_id }}" {% if filters.job_id|string == j.job_id|string %}selected{% endif %}>
+          {{ j.title }} ({{ j.company_name }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="stage" class="form-select">
+      <option value="">All Pipeline Stages</option>
+      {% for stg in stages %}
+        <option value="{{ stg }}" {% if filters.stage == stg %}selected{% endif %}>
+          {{ stg }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="min-width: 140px;">
+    <select name="eligibility" class="form-select">
+      <option value="">All Eligibility</option>
+      <option value="ELIGIBLE" {% if filters.eligibility == 'ELIGIBLE' %}selected{% endif %}>ELIGIBLE</option>
+      <option value="NOT_ELIGIBLE" {% if filters.eligibility == 'NOT_ELIGIBLE' %}selected{% endif %}>NOT_ELIGIBLE</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{{ url_for('list_applications') }}" class="btn btn-secondary btn-sm">Reset</a>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Application Code</th>
+          <th>Candidate</th>
+          <th>Job Drive & Company</th>
+          <th>Applied Date</th>
+          <th>Eligibility</th>
+          <th>Pipeline Stage</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+          <tr>
+            <td>
+              <a href="{{ url_for('view_application_detail', application_id=app.application_id) }}" style="font-weight: 600; color: var(--primary);">
+                {{ app.application_code }}
+              </a>
+              {% if app.is_override %}
+                <div><span class="badge badge-cancelled" style="font-size: 0.65rem; padding: 1px 5px;">Staff Override</span></div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-weight: 600;">
+                <a href="{{ url_for('view_candidate_detail', candidate_id=app.candidate_id) }}" style="color: inherit; text-decoration: none;">
+                  {{ app.first_name }} {{ app.last_name }}
+                </a>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                {{ app.candidate_code }} &bull; {{ app.primary_technology }}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">
+                <a href="{{ url_for('view_job_detail', job_id=app.job_id) }}" style="color: inherit; text-decoration: none;">
+                  {{ app.job_title }}
+                </a>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ app.company_name }}</div>
+            </td>
+            <td>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">{{ app.applied_date }}</div>
+            </td>
+            <td>
+              <span class="badge badge-{{ 'eligible' if app.eligibility_status == 'ELIGIBLE' else 'not_eligible' }}">
+                {{ app.eligibility_status }}
+              </span>
+            </td>
+            <td>
+              <span class="badge stage-{{ app.current_stage.lower() }}">
+                {{ app.current_stage }}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('view_application_detail', application_id=app.application_id) }}" class="btn btn-secondary btn-sm" title="View Details">
+                  <i class="fa-regular fa-eye"></i> View
+                </a>
+                {% if app.current_stage in ['SHORTLISTED', 'INTERVIEWED'] %}
+                  <a href="{{ url_for('schedule_interview_screen', application_id=app.application_id) }}" class="btn btn-warning btn-sm" title="Schedule Interview">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                  </a>
+                {% elif app.current_stage == 'SELECTED' %}
+                  <a href="{{ url_for('create_offer_screen', application_id=app.application_id) }}" class="btn btn-success btn-sm" title="Issue Offer">
+                    <i class="fa-solid fa-award"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon"><i class="fa-solid fa-file-excel"></i></div>
+              <div>No applications found matching your criteria.</div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

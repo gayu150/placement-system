@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block page_title %}Record Job Application{% endblock %}
+{% block page_subtitle %}Evaluate candidate eligibility in real time and submit application to placement drive{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-file-signature" style="color: var(--primary);"></i>
+      Application & Eligibility Evaluation Form
+    </div>
+    <a href="{{ url_for('list_applications') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to Applications
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('submit_application_action') }}" id="application-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="candidate_id">Select Candidate *</label>
+        <select id="candidate_id" name="candidate_id" class="form-select" required>
+          <option value="">-- Choose Candidate --</option>
+          {% for cand in candidates %}
+            <option value="{{ cand.candidate_id }}"
+              {% if (selected_candidate_id|string == cand.candidate_id|string) %}selected{% endif %}>
+              {{ cand.first_name }} {{ cand.last_name }} ({{ cand.candidate_code }}) &bull; {{ cand.qualification }} ({{ cand.passing_year }}) &bull; {{ cand.percentage }}% &bull; {{ cand.primary_technology }}
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Active candidates enrolled in the placement system.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="job_id">Select Job Opening *</label>
+        <select id="job_id" name="job_id" class="form-select" required>
+          <option value="">-- Choose Open Job Drive --</option>
+          {% for j in jobs %}
+            <option value="{{ j.job_id }}"
+              {% if (selected_job_id|string == j.job_id|string) %}selected{% endif %}>
+              {{ j.title }} &bull; {{ j.company_name }} &bull; Req: {{ j.qualification_req }}, Min {{ j.min_percentage }}%, Batch {{ j.min_passing_year }}-{{ j.max_passing_year }} (Deadline: {{ j.deadline }})
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Currently open job drives.</div>
+      </div>
+
+      <!-- Live Dynamic Eligibility Box -->
+      <div id="eligibility-preview" style="margin: 20px 0;">
+        <div class="alert alert-info">
+          <i class="fa-solid fa-calculator"></i>
+          Select both a Candidate and a Job Opening above to evaluate real-time eligibility criteria.
+        </div>
+      </div>
+
+      <!-- Staff Override Section (hidden by default, shown if ineligible or staff wishes to override) -->
+      <div id="override-section" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 20px;">
+        <h4 style="font-size: 0.9rem; font-weight: 700; color: #92400e; margin-bottom: 8px;">
+          <i class="fa-solid fa-user-shield"></i> Authorized Staff Override
+        </h4>
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #92400e;">
+            <input type="checkbox" id="is_override" name="is_override" value="1">
+            <span>Apply authorized staff override for this candidate</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="override_reason" style="color: #92400e;">Override Audit Reason *</label>
+          <textarea id="override_reason" name="override_reason" class="form-control" rows="2" placeholder="Explain justified reason for override (e.g. specialized industry experience, waiver approved by Placement Director)..."></textarea>
+          <div class="form-text" style="color: #92400e;">Overrides are recorded with your user ID in audit logs.</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-check"></i> Submit Application
+        </button>
+        <a href="{{ url_for('list_applications') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

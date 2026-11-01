@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block page_title %}Record Placement & Joining Outcome{% endblock %}
+{% block page_subtitle %}Formalize candidate placement and record physical or deferred onboarding outcome{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-handshake" style="color: var(--primary);"></i>
+      Placement Confirmation Form
+    </div>
+    <a href="{{ url_for('list_offers') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to Offers
+    </a>
+  </div>
+
+  <div class="card-body">
+    <!-- Offer Context -->
+    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 20px; font-size: 0.88rem; line-height: 1.8;">
+      <div><strong>Offer Letter:</strong> {{ offer.offer_code }} (Issued on {{ offer.offer_date }})</div>
+      <div><strong>Candidate:</strong> {{ offer.first_name }} {{ offer.last_name }} (<code>{{ offer.candidate_code }}</code>)</div>
+      <div><strong>Company & Role:</strong> {{ offer.designation }} at {{ offer.company_name }}</div>
+      <div><strong>Offered CTC:</strong> <span style="color: #166534; font-weight: 700;">₹{{ offer.package_lpa }} LPA</span></div>
+    </div>
+
+    <form method="POST" action="{{ url_for('record_placement_action', offer_id=offer.offer_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="designation">Final Confirmed Designation *</label>
+          <input type="text" id="designation" name="designation" class="form-control"
+                 value="{{ offer.designation }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="final_package_lpa">Final Confirmed CTC (LPA) *</label>
+          <input type="number" step="0.1" id="final_package_lpa" name="final_package_lpa" class="form-control" min="0.5"
+                 value="{{ offer.package_lpa }}" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="expected_joining_date">Expected Joining Date *</label>
+          <input type="date" id="expected_joining_date" name="expected_joining_date" class="form-control"
+                 value="{{ offer.expected_joining_date }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="actual_joining_date">Actual Joining Date</label>
+          <input type="date" id="actual_joining_date" name="actual_joining_date" class="form-control"
+                 value="{{ default_actual_date }}">
+          <div class="form-text">Fill if candidate has already physically reported.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="joining_status">Joining Outcome Status *</label>
+        <select id="joining_status" name="joining_status" class="form-select" required>
+          <option value="JOINED" selected>JOINED - Candidate has officially joined and reported</option>
+          <option value="PENDING">PENDING - Awaiting onboarding / expected joining date</option>
+          <option value="DEFERRED">DEFERRED - Candidate requested deferred joining timeline</option>
+          <option value="NOT_JOINED">NOT_JOINED - Candidate declined or opted out before joining</option>
+          <option value="NO_SHOW">NO_SHOW - Candidate failed to report on scheduled joining date</option>
+        </select>
+        <div class="form-text">Selecting 'JOINED' automatically updates application to JOINED and sets candidate profile to 'Placed'.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="remarks">Placement / Joining Verification Remarks</label>
+        <textarea id="remarks" name="remarks" class="form-control" rows="3" placeholder="HR onboarding confirmation notes, employee ID, reporting manager..."></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-check-double"></i> Confirm Placement Record
+        </button>
+        <a href="{{ url_for('list_offers') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
